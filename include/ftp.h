@@ -11,3 +11,5 @@ typedef enum
 int           ftp_init(void);
 loop_status_t ftp_loop(void);
 void          ftp_exit(void);
+
+#define LISTEN_PORT     5000

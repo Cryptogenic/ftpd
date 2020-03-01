@@ -11,6 +11,8 @@
 #include <3ds.h>
 #elif defined(__SWITCH__)
 #include <switch.h>
+#elif defined(__PS4__)
+#include <orbis/NetCtl.h>
 #endif
 #include "ftp.h"
 #include "console.h"
@@ -221,6 +223,15 @@ main(int  argc,
 
 #ifdef __PS4__
   sys_kexec((void *)kernel_jailbreak, 0);
+
+  SceNetCtlInfo ps4Info;
+  char notificationMsg[128];
+
+  sceNetCtlInit();
+  sceNetCtlGetInfo(SCE_NET_CTL_INFO_IP_ADDRESS, &ps4Info);
+
+  sprintf(notificationMsg, "FTP active\n%s:%u\n\n\n\n\n", ps4Info.ip_address, LISTEN_PORT);
+  sceSysUtilSendSystemNotificationWithText(129, notificationMsg);
 #endif
 
 #ifdef _3DS

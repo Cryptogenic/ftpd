@@ -56,7 +56,6 @@
 #define SOCU_ALIGN      0x1000
 #define SOCU_BUFFERSIZE 0x100000
 #endif
-#define LISTEN_PORT     5000
 #ifdef _3DS
 #define DATA_PORT       (LISTEN_PORT+1)
 #else
@@ -2238,7 +2237,7 @@ build_path(ftp_session_t *session,
   char *p;
 
   session->buffersize = 0;
-  memset(session->buffer, 0, sizeof(session->buffer));
+  (void)memset(session->buffer, 0, sizeof(session->buffer));
 
   /* make sure the input is a valid path */
   if(validate_path(args) != 0)
@@ -2986,6 +2985,7 @@ FTP_DECLARE(CWD)
 
   /* get the path status */
   rc = stat(session->buffer, &st);
+
   if(rc != 0)
   {
     console_print(RED "stat '%s': %d %s\n" RESET, session->buffer, errno, strerror(errno));
@@ -3454,7 +3454,7 @@ FTP_DECLARE(PASV)
 
   console_print(CYAN "%s %s\n" RESET, __func__, args ? args : "");
 
-  memset(buffer, 0, sizeof(buffer));
+  (void)memset(buffer, 0, sizeof(buffer));
 
   /* reset the state */
   ftp_session_set_state(session, COMMAND_STATE, CLOSE_PASV | CLOSE_DATA);
@@ -3532,6 +3532,7 @@ FTP_DECLARE(PASV)
   console_print(YELLOW "listening on %s:%u\n" RESET,
                 inet_ntoa(session->pasv_addr.sin_addr),
                 ntohs(session->pasv_addr.sin_port));
+
   session->flags |= SESSION_PASV;
 
   /* print the address in the ftp format */
