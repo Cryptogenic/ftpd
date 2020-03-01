@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "PS4",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/../OpenOrbis-PS4-Toolchain/include/**"
+            ],
+            "defines": [
+                "STATUS_STRING=\"\\\"ftpd v$(VERSION)\\\"\"",
+                "__PS4__=1"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64",
+            "compilerArgs": [
+                "-g",
+                "-Wall",
+                "-Iinclude"
+            ]
+        }
+    ],
+    "version": 4
+}

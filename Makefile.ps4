@@ -1,0 +1,46 @@
+ifeq ($(strip $(OO_PS4_TOOLCHAIN)),)
+$(error "Please set OO_PS4_TOOLCHAIN in your environment. export OO_PS4_TOOLCHAIN=<path to open orbis toolchain>")
+endif
+
+TARGET  	:= ftpd
+TOOLCHAIN 	:= $(OO_PS4_TOOLCHAIN)
+PROJDIR   	:= $(shell basename $(CURDIR))
+INTDIR    	:= build.ps4
+
+# Libraries linked into the ELF.
+LIBS 		:= -lc -lkernel -lSceLibcInternal
+
+# Compiler options. You likely won't need to touch these.
+CC 			:= clang++
+LD 			:= ld.lld
+ODIR 		:= $(INTDIR)
+SDIR 		:= source
+IDIRS 		:= -I$(TOOLCHAIN)/include -Iinclude
+LDIRS 		:= -L$(TOOLCHAIN)/lib
+CFLAGS 		:= -cc1 -triple x86_64-scei-ps4-elf -munwind-tables $(IDIRS) -Wno-everything -emit-obj -DSTATUS_STRING="\"ftpd v$(VERSION)\"" -D__PS4__
+LFLAGS 		:= -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr $(LDIRS) $(LIBS) $(TOOLCHAIN)/lib/crt1.o
+
+CFILES 		:= $(wildcard $(SDIR)/*.c)
+CPPFILES 	:= $(wildcard $(SDIR)/*.cpp)
+OBJS 		:= $(patsubst $(SDIR)/%.c, $(ODIR)/%.o, $(CFILES)) $(patsubst $(SDIR)/%.cpp, $(ODIR)/%.o, $(CPPFILES))
+
+TARGET = eboot.bin
+
+# Make rules
+$(TARGET): $(ODIR) $(OBJS)
+	$(LD) $(ODIR)/*.o -o $(ODIR)/$(PROJDIR).elf $(LFLAGS)
+	$(TOOLCHAIN)/bin/linux/create-eboot -in=$(ODIR)/$(PROJDIR).elf -out=$(ODIR)/$(PROJDIR).oelf --paid 0x3800000000000011
+
+$(ODIR)/%.o: $(SDIR)/%.c
+	$(CC) $(CFLAGS) -o $@ $< 
+
+$(ODIR)/%.o: $(SDIR)/%.cpp
+	$(CC) $(CFLAGS) -o $@ $<
+
+$(ODIR):
+	mkdir -p $@
+
+.PHONY: clean
+
+clean:
+	rm -f $(TARGET) $(ODIR)/*.o

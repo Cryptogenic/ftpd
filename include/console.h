@@ -4,6 +4,8 @@
 #include <3ds.h>
 #elif defined(__SWITCH__)
 #include <switch.h>
+#elif defined(__PS4__)
+
 #endif
 
 #if defined(_3DS) || defined(__SWITCH__)

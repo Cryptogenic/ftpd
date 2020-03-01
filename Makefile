@@ -11,7 +11,7 @@ export VERSION := $(VERSION)-$(GITREV)
 endif
 
 all:
-	@echo please choose 3dsx, cia, linux, or nro
+	@echo please choose ps4, 3dsx, cia, linux, or nro
 
 release:
 	# can't let these three run in parallel with each other due to using same
@@ -35,7 +35,11 @@ cia:
 linux:
 	@$(MAKE) -f Makefile.linux
 
+ps4:
+	@$(MAKE) -f Makefile.ps4
+
 clean:
+	@$(MAKE) -f Makefile.ps4 clean
 	@$(MAKE) -f Makefile.switch   clean
 	@$(MAKE) -f Makefile.3ds   clean
 	@$(MAKE) -f Makefile.linux clean

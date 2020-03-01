@@ -1,10 +1,12 @@
 #include "console.h"
+#if !defined(__PS4__)
 #include <arpa/inet.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#endif
 
 #ifdef _3DS
 #include <3ds.h>
@@ -14,6 +16,9 @@
 #include <switch.h>
 #define CONSOLE_WIDTH 80
 #define CONSOLE_HEIGHT 45
+#elif defined(__PS4__)
+#define CONSOLE_WIDTH 1280
+#define CONSOLE_HEIGHT 720
 #endif
 
 #if defined(_3DS) || defined (__SWITCH__)
@@ -242,20 +247,24 @@ console_init(void)
 void
 console_set_status(const char *fmt, ...)
 {
+  #if !defined(__PS4__)
   va_list ap;
   va_start(ap, fmt);
   vprintf(fmt, ap);
   va_end(ap);
   fputc('\n', stdout);
+  #endif
 }
 
 void
 console_print(const char *fmt, ...)
 {
+  #if !defined(__PS4__)
   va_list ap;
   va_start(ap, fmt);
   vprintf(fmt, ap);
   va_end(ap);
+  #endif
 }
 
 void

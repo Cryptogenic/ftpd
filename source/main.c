@@ -1,16 +1,19 @@
 
+
+#if !defined(__PS4__)
 #include <errno.h>
 #include <malloc.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <unistd.h>
+#endif
 #ifdef _3DS
 #include <3ds.h>
 #elif defined(__SWITCH__)
 #include <switch.h>
 #endif
-#include "console.h"
 #include "ftp.h"
+#include "console.h"
 
 /*! looping mechanism
  *
@@ -84,6 +87,123 @@ wait_for_b(void)
   /* B was not pressed */
   return LOOP_CONTINUE;
 }
+#elif defined(__PS4__)
+/*! wait until the O button is pressed
+ *
+ *  @returns loop status
+ */
+static loop_status_t
+wait_for_o(void)
+{
+  /* update button state */
+  //hidScanInput();
+
+  /* check if B was pressed */
+  //if(hidKeysDown(CONTROLLER_P1_AUTO) & KEY_B)
+  //  return LOOP_EXIT;
+
+  /* B was not pressed */
+  return LOOP_CONTINUE;
+}
+#endif
+
+#if defined(__PS4__)
+
+struct ucred {
+  char pad1[4];
+  int cr_uid;
+  int cr_ruid;
+  char pad2[8];
+  int cr_rgid;
+  char pad3[20];
+  void *cr_prison;
+  char pad4[28];
+  long long cr_sceAuthID;
+  long long cr_sceCaps[4];
+  char pad5[152];
+  int *cr_groups;
+};
+
+struct filedesc {
+  char pad1[24];
+  void *fd_rdir;
+  void *fd_jdir;
+};
+
+struct proc {
+  char pad1[64];
+  struct ucred *p_ucred;
+  struct filedesc *p_fd;
+};
+
+struct thread {
+  char pad1[8];
+  struct proc *td_proc;
+};
+
+#define SYSCALL(name, number) \
+asm( \
+  ".intel_syntax noprefix\n" \
+  ".global " #name "\n" #name ":\n" \
+  " mov rax, " #number "\n" \
+  " mov r10, rcx\n" \
+  " syscall\n" \
+  " jb " #name "_err\n" \
+  " ret\n" \
+  #name "_err:\n" \
+  " mov eax, -1\n" \
+  " ret\n" \
+)
+
+SYSCALL(sys_kexec, 11);
+
+void sys_kexec(void *func, void *uap);
+
+asm( \
+  ".intel_syntax noprefix\n" \
+  ".global kernel_rdmsr\nkernel_rdmsr:\n" \
+  " mov ecx, edi\n" \
+  " rdmsr\n" \
+  " shl rdx, 32\n" \
+  " or rax, rdx\n" \
+  " ret\n" \
+);
+
+void kernel_jailbreak(struct thread *td) {
+  struct ucred *cred;
+  struct filedesc *fd;
+
+  void *kernelBase;
+  void **prison0;
+  void **rootvnode;
+
+  kernelBase = kernel_rdmsr(0xC0000082) - 0x1C0;
+  prison0    = kernelBase + 0x10986A0;
+  rootvnode  = kernelBase + 0x22C1A70;
+
+  cred = td->td_proc->p_ucred;
+  fd = td->td_proc->p_fd;
+
+  /* Escalate process to uid0 */
+  cred->cr_uid = 0;
+  cred->cr_ruid = 0;
+  cred->cr_rgid = 0;
+  cred->cr_groups[0] = 0;
+
+  /* Break out of jail */
+  cred->cr_prison = prison0[0];
+
+  /* Set vnode to real root */
+  fd->fd_rdir = rootvnode[0];
+  fd->fd_jdir = rootvnode[0];
+
+  /* Set sony auth ID flag */
+  cred->cr_sceAuthID = 0x3800000000000007ULL;
+
+  /* Obtain system credentials for Sony stuff */
+  cred->cr_sceCaps[0] = 0xffffffffffffffff;
+  cred->cr_sceCaps[1] = 0xffffffffffffffff;
+}
 #endif
 
 /*! entry point
@@ -98,6 +218,10 @@ main(int  argc,
      char *argv[])
 {
   loop_status_t status = LOOP_RESTART;
+
+#ifdef __PS4__
+  sys_kexec((void *)kernel_jailbreak, 0);
+#endif
 
 #ifdef _3DS
   /* initialize needed 3DS services */
@@ -177,6 +301,12 @@ log_fail:
   /* deinitialize Switch services */
   consoleExit(NULL);
   nifmExit();
+
+#elif defined(__PS4__)
+  loop(wait_for_o);
+
+  _Exit(0);
+
 #endif
   return 0;
 }

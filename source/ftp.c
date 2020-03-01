@@ -10,7 +10,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#if !defined(__PS4__)
 #include <malloc.h>
+#endif
 #include <math.h>
 #include <netinet/in.h>
 #include <poll.h>
@@ -1408,8 +1410,9 @@ ftp_session_read_command(ftp_session_t *session,
   {
     session->flags |= SESSION_URGENT;
 
-    /* check if we are at the urgent marker */
-    atmark = sockatmark(session->cmd_fd);
+    ///* check if we are at the urgent marker */
+    // TODO: Fixme
+    /*&atmark = sockatmark(session->cmd_fd);
     if(atmark < 0)
     {
       console_print(RED "sockatmark: %d %s\n" RESET, errno, strerror(errno));
@@ -1419,7 +1422,7 @@ ftp_session_read_command(ftp_session_t *session,
 
     if(!atmark)
     {
-      /* discard in-band data */
+      // discard in-band data
       rc = recv(session->cmd_fd, session->cmd_buffer, sizeof(session->cmd_buffer), 0);
       if(rc < 0 && errno != EWOULDBLOCK)
       {
@@ -1428,7 +1431,7 @@ ftp_session_read_command(ftp_session_t *session,
       }
 
       return;
-    }
+    }*/
 
     /* retrieve the urgent data */
     rc = recv(session->cmd_fd, session->cmd_buffer, sizeof(session->cmd_buffer), MSG_OOB);
@@ -1535,7 +1538,7 @@ ftp_session_read_command(ftp_session_t *session,
 
       /* split command from arguments */
       args = buffer = session->cmd_buffer;
-      while(*args && !isspace((int)*args))
+      while(*args && !((char)*args == ' ' || (char)*args == '\t'))
         ++args;
       if(*args)
         *args++ = 0;
@@ -2096,7 +2099,8 @@ ftp_exit(void)
   console_print(CYAN "Waiting for socketExit()...\n" RESET);
 
   socketExit();
-
+#elif defined(__PS4__)
+  
 #endif
 }
 
